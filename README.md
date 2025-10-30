@@ -1,7 +1,7 @@
 # kolibri
 **Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection**
 
-`kolibri` is an R toolkit for working with split long-read alignments (e.g. PacBio/ONT mapped to a reference and exported as BED12). It helps you:
+`kolibri` is an R toolkit for working with split read alignments (mapped to a reference and exported as BED12). It helps you:
 
 1. **Cluster** nearby alignment fragments per chromosome.
 2. **Build** a shared-read **network** (nodes = clusters, edges = shared read names across clusters).
@@ -9,7 +9,7 @@
 4. **Extract** the underlying genomic sequence for clusters from a reference FASTA.
 5. **Probe** breakpoint density with reflection-aware KDE.
 
-The goal is to make “where else does this read map?” a first-class question.
+The goal is help “where else does this read map?” for diagnostics of genome assembly and discovering structural variation.
 
 ---
 
@@ -95,7 +95,6 @@ read_bed12(path)
 
 **Notes:**
 - Assumes **one block per line** (`blockCount == 1`).  
-- If any line has `blockCount > 1`, a **message** is printed so the user can handle exon-like BED12s.  
 - Adds:  
   - `aligned_length` (end - start)  
   - `nameN` (number of occurrences of this read name in the file)
@@ -269,7 +268,7 @@ nodes_to_fasta(
 ---
 
 ### 8. KDE helpers (experimental)
-We experimented with reflection-aware KDE to avoid edge-bias when breakpoints cluster at the edge of the window.
+We experimented with reflection-aware KDE to classify types of clusters based on edge-bias when breakpoints cluster at the edge of the window vs centered.
 
 - `kde_reflect(x, bw = ..., ...)`
   - makes a reflected sample around min/max
@@ -293,35 +292,11 @@ These are useful for **looking** at breakpoint concentration; they are **not** a
 
 ---
 
-## Example repo structure
-
-```text
-kolibri/
-├── DESCRIPTION
-├── NAMESPACE
-├── R/
-│   ├── read_bed12.R
-│   ├── cluster_reads_sweep.R
-│   ├── build_cluster_network.R
-│   ├── plot_cluster_network.R
-│   ├── plot_node_reads.R
-│   ├── nodes_to_fasta.R
-│   └── kde_helpers.R
-├── vignettes/
-│   └── getting-started.Rmd
-└── README.md   <- this file
-```
-
----
 
 ## Notes / TODO
 
-- add DBSCAN-based clustering variant (`cluster_reads_dbscan()`)
-- add KDE-based locus locator (`cluster_reads_kde()`)
-- add tests for out-of-bounds FASTA extraction
-- add example BED file + tiny FASTA for users
+- see DBSCAN-based clustering  (`cluster_reads_dbscan()`)
+- see KDE-based clustering (`cluster_reads_kde()`)
 
 ---
 
-## License
-MIT (or whatever you decide)
