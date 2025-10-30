@@ -29,7 +29,7 @@ This is **not** on CRAN and **not** a complete R package yet. The current way to
 1. **Clone or download** this GitHub repository:
 
 ```bash
-git clone https://github.com/<YOUR_ORG>/<YOUR_REPO>.git
+git clone https://github.com/greymonroe/kolibri.git
 ```
 
 or click **Download ZIP** on GitHub.
