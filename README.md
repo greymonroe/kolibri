@@ -145,7 +145,7 @@ plot_node_reads_by_cluster(
   alpha_col     = "score"
 )
 ```
-
+![TE](exampleTE.png)
 ---
 
 ## Functions
@@ -301,7 +301,7 @@ plot_node_reads_by_cluster(
   base_size     = 6
 )
 ```
-![TE](exampleTE.png)
+
 
 ---
 
