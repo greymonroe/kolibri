@@ -1,5 +1,8 @@
 # kolibri
 **Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection**
+<p align="left">
+  <img src="logo.png" width="400" alt="kolibri logo" />
+</p>
 
 `kolibri` is an R toolkit for working with split read alignments (mapped to a reference and exported as BED12). It helps you:
 
