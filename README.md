@@ -1,8 +1,66 @@
 # kolibri
+
 **Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection**
+
 <p align="left">
   <img src="logo.png" width="400" alt="kolibri logo" />
 </p>
+
+`kolibri` is an R-based toolkit for inspecting long-read alignments (e.g. PacBio/ONT) to find, group, and visualize split reads that indicate structural variation, transposition, recombination, or other complex genome events. It grew out of real analysis code for inspecting split PacBio CCS reads mapped to plant genomes.
+
+> **Status:** Beta / research code. Interfaces may change.
+
+---
+
+## Created by
+
+This package and example workflow were created by the **Monroe Lab, UC Davis** (Plant Sciences / Genome Center).
+
+If you use code, ideas, or figures from this repository, **please cite the Monroe Lab / UC Davis** and link back to the repo. Even though this is beta, proper attribution helps us keep developing it.
+
+Contact: **Grey Monroe** — <greymonroe@gmail.com>
+
+---
+
+## Installation (beta)
+
+This is **not** on CRAN and **not** a complete R package yet. The current way to use it is:
+
+1. **Clone or download** this GitHub repository:
+
+```bash
+git clone https://github.com/<YOUR_ORG>/<YOUR_REPO>.git
+```
+
+or click **Download ZIP** on GitHub.
+
+2. Open R/RStudio in the repo root and **source the main functions**:
+
+```r
+source("R/package_functions.R")
+```
+
+If you are missing dependencies (e.g. `data.table`, `ggplot2`, `ggraph`, `igraph`, maybe `Biostrings`), R will prompt / error. Install them with:
+
+```r
+install.packages(c("data.table", "ggplot2", "igraph", "ggraph"))
+# if you need Biostrings:
+# if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+# BiocManager::install("Biostrings")
+```
+
+3. There is a vignette-style walkthrough:
+
+```r
+rmarkdown::render("kolibri_vignette.Rmd")
+```
+
+or open `kolibri_vignette.Rmd` in RStudio and knit it. It uses example files from the repo (e.g. BED12) so you can run the workflow end-to-end.
+
+> **Note:** because this is beta, function names and arguments may change — check the vignette and `R/package_functions.R` for the current API.
+
+---
+
 
 `kolibri` is an R toolkit for working with split read alignments (mapped to a reference and exported as BED12). It helps you:
 
@@ -17,6 +75,12 @@ The goal is help “where else does this read map?” for diagnostics of genome 
 ---
 
 ## Basic Workflow
+
+Input is typically generated with something like
+
+```sh
+bedtools bamtobed -bed12 -i alignVA2.bam > alignVA2.bed12
+```
 
 ```r
 library(kolibri)

@@ -1,0 +1,210 @@
+---
+title: "Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection"
+author: "kolibri"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Overview
+
+This vignette shows a typical workflow for **kolibri** (**K**ernel-Operations for **L**ong-read **I**nsertion, **B**reakpoint & **R**ecombination **I**nspection).  
+The goal is to:
+
+1. read a long-read alignment in simplified BED12-like form,
+2. filter to split reads,
+3. cluster nearby split segments,
+4. build a *shared-read* network of those clusters,
+5. visualize the network, and
+6. zoom in on individual clusters / nodes, including kernel-density inspection of read breakpoints.
+
+All functions below are assumed to be defined in `package_functions.R` or exported by the package.
+
+## 1. Load package functions
+
+```{r load-funs}
+source("package_functions.R")
+```
+
+## 2. Read alignment as BED12-like table
+
+Input is typically generated with something like
+
+```sh
+bedtools bamtobed -bed12 -i alignVA2.bam > alignVA2.bed12
+```
+
+We read it with a simplified reader (one block per line is expected; if `blockCount > 1`, the reader will message).
+
+```{r read-bed}
+bed12 <- read_bed12("alignVA2.bed12")
+head(bed12)
+```
+
+## 3. Filter to split reads
+
+A reasonable starting filter is:
+
+- keep nuclear + organelle chromosomes of interest,
+- keep only reads that appear more than once (`nameN > 1`),
+- keep only decent mappings (`score > 30`),
+- keep sufficiently long aligned fragments (`aligned_length > 500`).
+
+You can tighten or relax these.
+
+```{r filter-split}
+split_reads <- bed12[chrom %in% paste0("Chr", c(1, 2, 3, 4, 5, "M")) &
+                       nameN > 1 &
+                       score > 30 &
+                       aligned_length > 500]
+split_reads
+```
+
+## 4. Sweep-cluster the split segments
+
+Here we group nearby segments from the same read name into *clusters* along the chromosome.  
+`delta` controls how far apart two segments can be to still belong to the same sweep;  
+`warn_if_clusters_closer_than` emits a message if two clusters end up very close, so you can re-run with a different `delta`.
+
+```{r cluster-sweep}
+clusters_sw <- cluster_reads_sweep(
+  split_reads,
+  delta = 1000,                     # distance threshold to potentially merge
+  warn_if_clusters_closer_than = 5000  # warn if two clusters end up too close
+)
+head(clusters_sw)
+```
+
+At this point every row should have, among other things, a **cluster id** and a **chromosome+position label** (e.g. `Chr1_12953910`).
+
+## 5. Build the shared-read network
+
+Two clusters are connected (i.e. an *edge* is created) if they share at least one read name.  
+We keep the per-cluster averages (score, length) and also per-edge averages over the shared reads.
+
+```{r build-net}
+net <- build_cluster_network(
+  clusters_sw,
+  cluster_col = "chrom_cluster_id",
+  read_col    = "name",
+  chrom_col   = "chrom",
+  id_col      = "cluster_id",
+  min_shared  = 1
+)
+
+head(net$nodes, 5)
+head(net$edges, 5)
+head(net$reads, 5)
+```
+
+`net$nodes` are your cluster *nodes* (with counts and spans),  
+`net$edges` tell you which two clusters shared reads and how many,  
+`net$reads` are the original rows filtered to just those reads that participate in exactly **two** kept clusters (so `cluster_n` and `shared_reads` match the final network).
+
+## 6. Plot the network
+
+We can make a simple **ggraph** plot. Here we label everything, cap node sizes at 50, and keep neighbors even if they are below the size threshold.
+
+```{r plot-net, fig.height=6, fig.width=7}
+p_label <- plot_cluster_network_ggraph(
+  net,
+  layout                = "fr",  # force-directed (Fruchterman-Reingold)
+  cap                   = 50,
+  label                 = TRUE,
+  min_cluster_n         = 2,
+  label_col             = "cluster",
+  alpha_range           = c(1, 1),
+  label_size            = 2,
+  seed                  = 10,
+  keep_neighbors_of_kept = TRUE
+)
+p_label
+```
+
+You can experiment with other layouts (`"kk"`, `"graphopt"`, `"mds"`, `"lgl"`) if the network is long and skinny.
+
+## 7. Plot reads for a cluster and its partners
+
+This figure shows the *primary* cluster (the one you pick) and every cluster that shares reads with it, faceted by cluster.  
+
+```{r plot-node-by-cluster, fig.height=4.5, fig.width=7}
+plot_node_reads_by_cluster(
+  net,
+  node          = "Chr1_12953910",
+  primary_color = "red",
+  partner_color = "red",
+  alpha_col     = "score"
+)
+```
+
+## 8. Plot reads around a node in the genome
+
+Sometimes you want to see **all** reads that land near a particular cluster anchor (not just split reads in the network). Useful for checking if other reads span the breakpoints.
+Provide the **full** BED (not just the filtered table) and a window size.
+Red = read segments that are split reads, grey = nearby non-split reads
+
+```{r plot-reads-around, fig.height=4.5, fig.width=7}
+plot_reads_around_node(
+  net,
+  node        = "Chr4_9607840",
+  bed         = bed12,
+  window_kb   = 10,
+  alpha_col   = "score",
+  alpha_range = c(0.3, 1.0)
+) +
+  ggplot2::geom_point(ggplot2::aes(x = end,   y = y)) +
+  ggplot2::geom_point(ggplot2::aes(x = start, y = y))
+```
+
+## 9. Extract cluster sequences
+
+If you also have the genome loaded (e.g. with `seqinr::read.fasta()` or `Biostrings::readDNAStringSet()`), you can pull out the actual sequence span for the cluster(s).
+
+```{r nodes-to-fasta, eval=FALSE}
+# assume `genome` is a named list / DNAStringSet with names like "Chr1", "Chr2", ...
+genome<-seqinr::read.fasta("Col-CEN_v1.2.fasta.gz")
+
+nodes_to_fasta(
+  net,
+  genome,
+  outfile  = "cluster.fa",
+  pad_bp   = 0,
+  clusters = "Chr1_12953910",
+  width    = 10000
+)
+```
+
+## 10. Inspect breakpoints with kernel density
+
+Finally, we can look at the **start** and **end** positions of all reads that belong to a cluster, run a *reflected* kernel density estimator to avoid edge bias, and overlay it on top of a histogram to spot multimodality (e.g. two breakpoints).
+
+```{r kde-node, fig.height=4.5, fig.width=7}
+kernels <- plot_node_breaks_kde(net, node = "Chr1_12953910")
+kernels$plot
+```
+
+And on another node:
+
+```{r kde-node2, fig.height=4.5, fig.width=7}
+kernels2 <- plot_node_breaks_kde(net, node = "Chr4_9607840")
+kernels2$plot
+```
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```
