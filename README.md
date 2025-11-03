@@ -361,10 +361,16 @@ These are useful for **looking** at breakpoint concentration; they are **not** a
 ---
 
 
-## Notes / TODO
+## Notes / TODO / Coming soon
 
 - see DBSCAN-based clustering  (`cluster_reads_dbscan()`)
 - see KDE-based clustering (`cluster_reads_kde()`)
-
+- Diagnostic plots of net (node lengths, hist of edge number, kdes, etc)
+- Net clean up function - find abnormally long nodes (>95ile 2x read length) - bdscan or kde internally to split bad nodes
+- Short read tests
+- Convert to R package
+- pre-run pipeline: map reads
+- function() map+plot split reads btwn haps
+- function() diagnose callability for split reads (i.e. btwn haps.)
 ---
 
