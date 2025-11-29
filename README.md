@@ -76,12 +76,22 @@ The goal is help “where else does this read map?” for diagnostics of genome 
 
 ## Basic Workflow
 
-Input is typically generated with something like
+Input is typically generated with something like starting from reference genome `ref.fa` and HiFi CCS reads (PacBio BAM): `reads.bam`
+The `aligned.bed12` is the key file for Kolibri
 
 ```sh
-bedtools bamtobed -bed12 -i alignVA2.bam > alignVA2.bed12
+pbmm2 index ref.fa ref.mmi
+
+pbmm2 align ref.mmi reads.bam aligned.bam \
+    --preset CCS \
+    --sort
+    
+samtools index aligned.bam
+
+bedtools bamtobed -bed12 -i aligned.bam > aligned.bed12
 ```
 
+### example with `alignVA2.bed12`
 ```r
 library(kolibri)
 library(data.table)
@@ -89,13 +99,14 @@ library(data.table)
 # 1. read bed12
 bed12 <- read_bed12("alignVA2.bed12")
 
-# 2. filter to split, good-quality reads (example)
+# 2. filter to split, good-quality reads (example), nameN is literally the number of times the read name appears in the data: reads mapping to multiple locations will have nameN>1
 split_reads <- bed12[
   chrom %in% paste0("Chr", c(1,2,3,4,5,"M")) &
     nameN > 1 &
     score > 30 &
     aligned_length > 500
 ]
+
 
 # 3. cluster per chromosome
 clusters_sw <- cluster_reads_sweep(
@@ -359,6 +370,7 @@ These are useful for **looking** at breakpoint concentration; they are **not** a
 - The network is built **after** filtering reads down to those present in **exactly 2** nodes (your rule to simplify the network).
 
 ---
+
 
 
 ## Notes / TODO / Coming soon
