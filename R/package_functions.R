@@ -2,6 +2,7 @@
 library(data.table)
 library(ggplot2)
 library(polymorphology2)
+library(IRanges)
 
 # ---- I/O ----
 
@@ -2530,6 +2531,164 @@ plot_node_breaks_kde <- function(net,
     bw_hist  = bw_hist
   )
 }
+
+
+library(data.table)
+library(IRanges)
+library(ggplot2)
+
+plot_bed_igv <- function(bed_dt,
+                         chrom,
+                         region_start,
+                         region_end,
+                         max_reads   = 5000,
+                         color_var   = "strand",  # e.g. "strand" or "nameN"; NULL = no color
+                         show_blocks = TRUE) {
+  bed_dt <- as.data.table(bed_dt)
+
+  # avoid name collision: save argument value separately
+  target_chrom <- chrom
+
+  ## 1. Subset to region & chrom
+  reads <- bed_dt[
+    chrom == target_chrom &
+      end   > region_start &   # overlaps region
+      start < region_end
+  ]
+
+  if (!nrow(reads)) {
+    stop("No reads found in that region.")
+  }
+
+  ## 2. Downsample if too many reads
+  if (nrow(reads) > max_reads) {
+    message("Subsampling ", max_reads, " of ", nrow(reads), " reads for plotting.")
+    set.seed(1L)
+    reads <- reads[sample(.N, max_reads)]
+  }
+
+  ## 3. Assign IGV-style tracks (non-overlapping rows
+  # IRanges is 1-based, BED is 0-based; bump start by 1
+  ir <- IRanges(start = reads$start + 1L, end = reads$end)
+  reads[, track := IRanges::disjointBins(ir)]
+
+  ## 4. Add read_id and optional color column
+  reads[, read_id := .I]
+
+  use_color <- FALSE
+  if (!is.null(color_var)) {
+    # allow both quoted ("strand") and unquoted (strand) usage
+    if (!is.character(color_var)) {
+      color_var <- deparse(substitute(color_var))
+    }
+    if (color_var %in% names(reads)) {
+      reads[, .col := reads[[color_var]]]
+      use_color <- TRUE
+    } else {
+      warning("color_var '", color_var, "' not found in columns; ignoring color mapping.")
+      reads[, .col := NA]
+    }
+  } else {
+    reads[, .col := NA]
+  }
+
+  ## 5. Expand to blocks (or just full reads
+  if (isTRUE(show_blocks) &&
+      all(c("blockCount", "blockSizes", "blockStarts") %in% names(reads))) {
+
+    block_dt <- reads[
+      ,
+      {
+        bc <- as.integer(blockCount)
+        # single block or missing block info → treat as one contiguous chunk
+        if (is.na(bc) || bc <= 1L || is.na(blockSizes) || blockSizes == "") {
+          data.table(
+            block_start = start,
+            block_end   = end
+          )
+        } else {
+          sizes  <- as.integer(strsplit(blockSizes,  ",")[[1]])
+          rel_st <- as.integer(strsplit(blockStarts, ",")[[1]])
+
+          sizes  <- sizes[!is.na(sizes)]
+          rel_st <- rel_st[!is.na(rel_st)]
+          n      <- min(length(sizes), length(rel_st))
+
+          if (n == 0L) {
+            data.table(
+              block_start = start,
+              block_end   = end
+            )
+          } else {
+            data.table(
+              block_start = start + rel_st[seq_len(n)],
+              block_end   = start + rel_st[seq_len(n)] + sizes[seq_len(n)]
+            )
+          }
+        }
+      },
+      by = .(read_id, chrom, track, .col)
+    ]
+
+  } else {
+    # no block structure: whole read as a single block
+    block_dt <- reads[
+      ,
+      .(
+        read_id     = read_id,
+        chrom       = chrom,
+        track       = track,
+        .col        = .col,
+        block_start = start,
+        block_end   = end
+      )
+    ]
+  }
+
+  ## 6. Clip blocks to region boundaries
+  block_dt[block_start < region_start, block_start := region_start]
+  block_dt[block_end   > region_end,   block_end   := region_end]
+
+  ## 7. Build plot
+  if (use_color) {
+    p <- ggplot(block_dt) +
+      geom_segment(
+        aes(x = block_start, xend = block_end,
+            y = track,       yend = track,
+            colour = .col),
+        linewidth = 0.25,
+        lineend   = "round"
+      )
+  } else {
+    p <- ggplot(block_dt) +
+      geom_segment(
+        aes(x = block_start, xend = block_end,
+            y = track,       yend = track),
+        linewidth = 0.25,
+        lineend   = "round"
+      )
+  }
+
+  p +
+    scale_x_continuous(
+      limits = c(region_start, region_end),
+      name   = "Position (bp)"
+    ) +
+    scale_y_reverse(  # IGV-style: track 1 at top
+      name   = "Reads (track)",
+      breaks = NULL
+    ) +
+    theme_classic(base_size = 6) +
+    theme(
+      panel.grid       = element_blank(),
+      axis.text.y      = element_blank(),
+      axis.ticks.y     = element_blank(),
+      legend.position  = "bottom",
+      legend.key.size  = unit(0.25, "cm")
+    )
+}
+
+
 
 #
 # estimate_modes_2critical <- function(x,
