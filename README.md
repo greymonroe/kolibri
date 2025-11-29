@@ -362,19 +362,9 @@ These are useful for **looking** at breakpoint concentration; they are **not** a
 
 ---
 
-## Data Assumptions / Gotchas
-
-- One row per **alignment fragment**. If you have true BED12 multi-block lines, read them and expand to 1-row-per-block first (or let `read_bed12()` warn you).
-- Reads are identified by a **stable** `name` (PacBio CCS string etc).
-- Clustering is done **per chromosome**.
-- The network is built **after** filtering reads down to those present in **exactly 2** nodes (your rule to simplify the network).
-
----
-
-
-
 ## Notes / TODO / Coming soon
-
+- vizualizing mapping depth and score for diagnostics of assembly
+- vignette: IGV style plot
 - see DBSCAN-based clustering  (`cluster_reads_dbscan()`)
 - see KDE-based clustering (`cluster_reads_kde()`)
 - Diagnostic plots of net (node lengths, hist of edge number, kdes, etc)
