@@ -6,7 +6,7 @@
   <img src="logo.png" width="400" alt="kolibri logo" />
 </p>
 
-`kolibri` is an R-based toolkit for inspecting long-read alignments (e.g. PacBio/ONT) to find, group, and visualize split reads that indicate structural variation, transposition, recombination, or other complex genome events. It grew out of real analysis code for inspecting split PacBio CCS reads mapped to plant genomes.
+`kolibri` is an R-based toolkit for inspecting long-read alignments (e.g. PacBio/ONT) to find, group, and visualize split reads that indicate assembly errors, structural variation, transposition, recombination, or other complex genome events. It grew out of analysis code for inspecting split PacBio CCS reads mapped to plant genomes.
 
 > **Status:** Beta / research code. Interfaces may change.
 
@@ -29,7 +29,7 @@ This is **not** on CRAN and **not** a complete R package yet. The current way to
 1. **Clone or download** this GitHub repository:
 
 ```bash
-git clone https://github.com/<YOUR_ORG>/<YOUR_REPO>.git
+git clone https://github.com/greymonroe/kolibri.git
 ```
 
 or click **Download ZIP** on GitHub.
@@ -145,7 +145,7 @@ plot_node_reads_by_cluster(
   alpha_col     = "score"
 )
 ```
-
+![TE](exampleTE.png)
 ---
 
 ## Functions
@@ -301,7 +301,7 @@ plot_node_reads_by_cluster(
   base_size     = 6
 )
 ```
-![TE](exampleTE.png)
+
 
 ---
 
