@@ -2479,7 +2479,8 @@ plot_node_breaks_kde <- function(net,
                                  cluster_col = "chrom_cluster_id",
                                  bw_method   = "SJ",
                                  bins        = 50L,
-                                 kernel      = "gaussian") {
+                                 kernel      = "gaussian",
+                                 lw=1) {
 
   # 1) pull starts/ends for that node
   dt_reads <- as.data.table(net$reads)
@@ -2502,19 +2503,21 @@ plot_node_breaks_kde <- function(net,
   bw_hist <- diff(range(dt$x)) / bins
 
   # 4) build density df & scale to counts
-  dens_df <- data.frame(
+  dens_df <- data.table(
     x = res_kde$density$x,
     y = res_kde$density$y
   )
   dens_df$y_scaled <- dens_df$y * nrow(dt) * bw_hist
 
+  x_peak <- dens_df[which.max(y_scaled), x]
+  dens_df[, rel_x := x - x_peak]
   # 5) plot
   p <- ggplot(dt, aes(x = x)) +
     geom_histogram(binwidth = bw_hist,
                    fill = "grey90", color = "grey80") +
     geom_line(data = dens_df,
               aes(x = x, y = y_scaled),
-              color = "steelblue", linewidth = 1) +
+              color = "steelblue", linewidth = lw) +
     labs(
       title = paste0("Kernel density for ", node),
       x = "Read breaks",
