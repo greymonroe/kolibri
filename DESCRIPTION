@@ -1,16 +1,42 @@
 Package: kolibri
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Kernel-Operations for Long-read Insertion, Breakpoint and Recombination Inspection
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
+      "Grey", "Monroe",
+      email = "greymonroe@gmail.com",
+      role = c("aut", "cre"),
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Tools for inspecting long-read alignments (PacBio/ONT) exported as BED12
+    to find, group, and visualize split reads. Split reads—reads that map to two or
+    more genomic locations—are indicators of structural variation, transposable element
+    insertions, recombination breakpoints, and assembly errors. kolibri clusters
+    these split segments per chromosome using sweep, DBSCAN, or kernel-density-based
+    algorithms, builds a shared-read network connecting related clusters, and provides
+    a suite of visualization functions for exploring the network and individual nodes.
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
+LazyData: false
+URL: https://github.com/greymonroe/kolibri
+BugReports: https://github.com/greymonroe/kolibri/issues
+Imports:
+    data.table,
+    ggplot2,
+    igraph,
+    ggraph,
+    IRanges,
+    dbscan,
+    grid,
+    scales,
+    stats
+Suggests:
+    seqinr,
+    Biostrings,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+RoxygenNote: 7.3.3

@@ -1,2 +1,8 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^kolibri_vignette\.html$
+^kolibri_vignette\.Rmd$
+^kde_heatmap\.pdf$
+^exampleTE\.png$
+^logo\.png$
+^README\.md$

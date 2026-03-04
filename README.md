@@ -3,7 +3,7 @@
 **Kernel-Operations for Long-read Insertion, Breakpoint & Recombination Inspection**
 
 <p align="left">
-  <img src="logo.png" width="400" alt="kolibri logo" />
+  <img src="man/figures/logo.png" width="400" alt="kolibri logo" />
 </p>
 
 `kolibri` is an R-based toolkit for inspecting long-read alignments (e.g. PacBio/ONT) to find, group, and visualize split reads that indicate assembly errors, structural variation, transposition, recombination, or other complex genome events. It grew out of analysis code for inspecting split PacBio CCS reads mapped to plant genomes.
@@ -22,42 +22,22 @@ Contact: **Grey Monroe** — <greymonroe@gmail.com>
 
 ---
 
-## Installation (beta)
+## Installation
 
-This is **not** on CRAN and **not** a complete R package yet. The current way to use it is:
-
-1. **Clone or download** this GitHub repository:
-
-```bash
-git clone https://github.com/greymonroe/kolibri.git
-```
-
-or click **Download ZIP** on GitHub.
-
-2. Open R/RStudio in the repo root and **source the main functions**:
+Install directly from GitHub using `remotes`:
 
 ```r
-source("R/package_functions.R")
+# install.packages("remotes")
+remotes::install_github("greymonroe/kolibri")
 ```
 
-If you are missing dependencies (e.g. `data.table`, `ggplot2`, `ggraph`, `igraph`, maybe `Biostrings`), R will prompt / error. Install them with:
+Dependencies (`data.table`, `ggplot2`, `igraph`, `ggraph`, `IRanges`, `dbscan`) will be installed automatically.
+
+After installation, browse the vignette for a full worked example:
 
 ```r
-install.packages(c("data.table", "ggplot2", "igraph", "ggraph"))
-# if you need Biostrings:
-# if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-# BiocManager::install("Biostrings")
+browseVignettes("kolibri")
 ```
-
-3. There is a vignette-style walkthrough:
-
-```r
-rmarkdown::render("kolibri_vignette.Rmd")
-```
-
-or open `kolibri_vignette.Rmd` in RStudio and knit it. It uses example files from the repo (e.g. BED12) so you can run the workflow end-to-end.
-
-> **Note:** because this is beta, function names and arguments may change — check the vignette and `R/package_functions.R` for the current API.
 
 ---
 
@@ -97,7 +77,7 @@ library(kolibri)
 library(data.table)
 
 # 1. read bed12
-bed12 <- read_bed12("alignVA2.bed12")
+bed12 <- read_bed12(system.file("extdata", "alignVA2.bed12", package = "kolibri"))
 
 # 2. filter to split, good-quality reads (example), nameN is literally the number of times the read name appears in the data: reads mapping to multiple locations will have nameN>1
 split_reads <- bed12[
